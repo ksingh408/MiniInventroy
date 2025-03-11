@@ -9,10 +9,10 @@ const itemSchema = new mongoose.Schema({
         status: { type: String, enum: ['In Stock', 'Out of Stock'], default: 'In Stock' }
       });
       
-      // Composite index to ensure unique modelId + color
+     
       itemSchema.index({ modelId: 1, color: 1 }, { unique: true });
       
-      // Middleware to update status
+      
       itemSchema.pre('save', function (next) {
         this.status = this.quantity === 0 ? 'Out of Stock' : 'In Stock';
         next();

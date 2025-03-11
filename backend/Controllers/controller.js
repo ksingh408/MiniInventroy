@@ -11,6 +11,24 @@ exports.createItem = async (req, res) => {
   }
 };
 
+exports.editItem= async (req, res) => {
+  try {
+    const { name, modelId, color, quantity } = req.body;
+    const updatedItem = await Item.findByIdAndUpdate(
+      req.params.id,
+      { name, modelId, color, quantity },
+      { new: true }
+    );
+    updatedItem.save();
+  
+    if (!updatedItem) return res.status(404).json({ message: "Item not found" });
+    res.json({ message: "Item updated successfully", updatedItem });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
 exports.getAllItems = async (req, res) => {
   try {
     const items = await Item.find();
