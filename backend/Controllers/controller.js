@@ -31,10 +31,22 @@ exports.editItem= async (req, res) => {
 
 exports.getAllItems = async (req, res) => {
   try {
-    const items = await Item.find();
-    res.json(items);
+    let { page = 1, limit = 5 } = req.query; 
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const items = await Item.find().skip(skip).limit(limit);
+    const totalItems = await Item.countDocuments();
+    
+    res.json({
+      items,
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: page
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Server Error", error });
   }
 };
 
