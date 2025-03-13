@@ -1,38 +1,42 @@
-
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchItems, addItem, updateItem, deleteItem } from "./inventorySlice";
+import { fetchItems, addItem, updateItem, deleteItem, setPage } from "./inventorySlice";
 
 const InventoryManager = () => {
   const dispatch = useDispatch();
-  const { items } = useSelector((state) => state.inventory);
+  const { items, currentPage, totalPages } = useSelector((state) => state.inventory);
 
   const [formData, setFormData] = useState({ name: "", modelId: "", color: "", quantity: "" });
   const [editId, setEditId] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchItems());
-  }, [dispatch]);
+    dispatch(fetchItems({ page: currentPage, limit: 5 })); // Fetch items with pagination
+  }, [dispatch, currentPage]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (editId) {
-      dispatch(updateItem({ id: editId, item: formData })).then(()=>dispatch(fetchItems()));
+      await dispatch(updateItem({ id: editId, item: formData }));
     } else {
-      dispatch(addItem(formData)).unwrap().then(()=>dispatch(fetchItems()));
+      await dispatch(addItem(formData));
     }
     setFormData({ name: "", modelId: "", color: "", quantity: "" });
     setEditId(null);
+    dispatch(fetchItems({ page: currentPage, limit: 5 })); // Refresh data after action
   };
 
   const handleEdit = (item) => {
-  
     setFormData({ name: item.name, modelId: item.modelId, color: item.color, quantity: item.quantity });
     setEditId(item._id);
+  };
+
+  const handleDelete = async (id) => {
+    await dispatch(deleteItem(id));
+    dispatch(fetchItems({ page: currentPage, limit: 5 })); // Refresh data after delete
   };
 
   return (
@@ -73,12 +77,31 @@ const InventoryManager = () => {
               <td className="border px-4 py-2">{item.status}</td>
               <td className="border px-4 py-2">
                 <button onClick={() => handleEdit(item)} className="bg-gray-800 text-white px-4 py-2 rounded mr-2">Edit</button>
-                <button onClick={() => dispatch(deleteItem(item._id))} className="bg-gray-500 text-white px-4 py-2 rounded">Delete</button>
+                <button onClick={() => handleDelete(item._id)} className="bg-gray-500 text-white px-4 py-2 rounded">Delete</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* Pagination */}
+      <div className="mt-4 flex justify-center space-x-2">
+        <button
+          onClick={() => dispatch(setPage(currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-2 bg-gray-700 text-white rounded disabled:bg-gray-400"
+        >
+          Previous
+        </button>
+        <span className="px-4 py-2">{currentPage} / {totalPages}</span>
+        <button
+          onClick={() => dispatch(setPage(currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-2 bg-gray-700 text-white rounded disabled:bg-gray-400"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
